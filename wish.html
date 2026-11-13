@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Happy Birthday Sissy</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Playfair+Display:ital,wght@0,600;0,700;1,600&family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=Inter:wght@400;500;600;700;800&display=swap');
+  :root{
+    --rose:#D6336C; --rose-soft:#FCE4EC; --plum:#3F1D3D; --gold:#C9A24B; --gold-soft:#F3E3B5;
+    --blush:#FFF4F6; --ink:#3B2A3A; --muted:#8A6F86; --line:#F1D9E2;
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    margin:0; color:var(--ink); font-family:'Inter',system-ui,sans-serif;
+    background:
+      radial-gradient(900px 500px at 10% -5%, #FFE1EA 0%, transparent 60%),
+      radial-gradient(800px 520px at 100% 20%, #EADCFB 0%, transparent 60%),
+      radial-gradient(900px 600px at 0% 80%, #FFEBC9 0%, transparent 55%),
+      #FFF8F6;
+    background-attachment:fixed; overflow-x:hidden;
+  }
+  #progress{ position:fixed; top:0; left:0; height:3px; width:0; z-index:60; background:linear-gradient(90deg,var(--rose),var(--gold)); }
+  canvas#confetti{ position:fixed; inset:0; pointer-events:none; z-index:55; }
+  .petal{ position:fixed; top:-30px; pointer-events:none; z-index:1; opacity:.5; animation:fall linear forwards; }
+  @keyframes fall{ to{ transform:translateY(110vh) rotate(260deg); opacity:0; } }
+  @keyframes rise{ from{ opacity:0; transform:translateY(8px);} to{ opacity:1; transform:none;} }
+
+  /* ---------- Card stages ---------- */
+  .wrap{ min-height:100svh; display:flex; align-items:center; justify-content:center; padding:24px 16px; position:relative; z-index:2; }
+  #card{ width:min(94vw,460px); background:#fff; border:1px solid var(--line); border-radius:22px; overflow:hidden;
+    box-shadow:0 26px 60px -30px rgba(214,51,108,.55), 0 2px 6px rgba(63,29,61,.05); }
+  .head{ background:linear-gradient(135deg,#8E2C6B,var(--rose)); color:#fff; padding:18px 22px 16px; }
+  .head .tag{ font-size:11px; font-weight:600; letter-spacing:.14em; text-transform:uppercase; opacity:.85; }
+  .head h1{ margin:6px 0 0; font-size:19px; font-weight:700; letter-spacing:-.01em; }
+  .bar{ height:4px; background:rgba(255,255,255,.28); border-radius:2px; margin-top:14px; overflow:hidden; }
+  .bar i{ display:block; height:100%; width:0; background:#fff; transition:width .35s ease; }
+  .body{ padding:22px 22px 24px; }
+  .qnum{ font-size:12px; font-weight:600; color:var(--rose); letter-spacing:.08em; text-transform:uppercase; }
+  .q{ font-family:'Playfair Display',serif; font-size:22px; font-weight:700; line-height:1.25; margin:8px 0 18px; color:var(--plum); }
+  .opts{ position:relative; display:flex; flex-direction:column; gap:10px; min-height:120px; }
+  .opt{ font:inherit; font-size:15px; font-weight:600; text-align:left; cursor:pointer; padding:14px 16px; border-radius:12px;
+    border:1.5px solid var(--line); background:#fff; color:var(--ink); transition:border-color .15s, background .15s, transform .1s; }
+  .opt:hover{ border-color:var(--rose); background:var(--blush); }
+  .opt:active{ transform:scale(.98); }
+  .opt.picked{ border-color:var(--rose); background:var(--blush); }
+  .opt:disabled{ cursor:default; opacity:.55; }
+  .opt.picked:disabled{ opacity:1; }
+  .opt.runaway{ transition:left .18s ease, top .18s ease; }
+  .reply{ margin-top:14px; padding:14px 16px; border-radius:12px; background:#FFFBF0; border:1px solid var(--gold-soft);
+    border-left:4px solid var(--gold); font-size:14.5px; line-height:1.55; color:#2E2230; animation:rise .3s ease both; }
+  .next{ margin-top:16px; width:100%; font:inherit; font-size:15px; font-weight:700; cursor:pointer; color:#fff; border:none; border-radius:12px; padding:14px;
+    background:linear-gradient(90deg,var(--rose),#E85D93); box-shadow:0 10px 20px -10px rgba(214,51,108,.8); }
+  .next:active{ transform:scale(.98); }
+
+  .open .stamp{ display:inline-block; border:3px solid #DC2626; color:#DC2626; font-weight:800; font-size:14px; letter-spacing:.14em; padding:4px 12px; border-radius:6px; transform:rotate(-6deg); animation:stampIn .5s ease both; }
+  @keyframes stampIn{ from{ transform:rotate(-6deg) scale(2.4); opacity:0; } to{ transform:rotate(-6deg) scale(1); opacity:1; } }
+  .open .caseno{ margin-top:12px; font-size:11.5px; font-weight:600; letter-spacing:.08em; color:var(--muted); }
+  .open .summons{ font-family:'Playfair Display',serif; font-size:23px; line-height:1.25; font-weight:700; margin:8px 0 16px; color:var(--plum); }
+  .open .file{ border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:18px; }
+  .open .row{ display:flex; gap:10px; padding:11px 14px; font-size:14px; border-bottom:1px solid var(--line); }
+  .open .row:last-child{ border-bottom:none; }
+  .open .row b{ flex:0 0 96px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); padding-top:2px; }
+  .siren{ animation:blink 1s steps(2) infinite; }
+  @keyframes blink{ 50%{ opacity:.25; } }
+
+  /* Letter box */
+  .mailwrap{ text-align:center; }
+  .env{ width:210px; height:136px; margin:8px auto 18px; position:relative; border-radius:10px; background:linear-gradient(135deg,#8E2C6B,var(--rose)); box-shadow:0 18px 30px -14px rgba(142,44,107,.7); }
+  .env::after{ content:""; position:absolute; left:0; right:0; bottom:0; top:42%; background:#B52A64; clip-path:polygon(0 100%,50% 25%,100% 100%); border-radius:0 0 10px 10px; }
+  .env .flap{ position:absolute; inset:0; background:#A02462; clip-path:polygon(0 0,50% 58%,100% 0); transform-origin:top center; transition:transform .6s cubic-bezier(.6,-.2,.3,1.2); z-index:3; border-radius:10px 10px 0 0; }
+  .env .seal{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:48px; height:48px; border-radius:50%; background:var(--gold-soft); display:flex; align-items:center; justify-content:center; font-size:22px; z-index:4; box-shadow:0 4px 10px rgba(0,0,0,.25); transition:opacity .3s, transform .3s; }
+  .env.open .flap{ transform:rotateX(180deg); }
+  .env.open .seal{ opacity:0; transform:translate(-50%,-50%) scale(0); }
+  .letterbox{ text-align:left; margin-top:6px; padding:22px 20px 18px; background:#FFFDF9; border:1px solid var(--gold-soft); border-radius:16px; animation:rise .6s ease both; box-shadow:0 14px 30px -22px rgba(201,162,75,.9); }
+  .letterbox p{ font-family:'Cormorant Garamond',serif; font-size:19px; line-height:1.55; font-weight:500; margin:0 0 12px; color:#4A3549; }
+  .letterbox .dear{ font-family:'Playfair Display',serif; font-size:19px; color:var(--rose); font-weight:600; }
+  .letterbox .sig{ text-align:right; font-family:'Great Vibes',cursive; font-size:32px; color:var(--rose); margin:4px 0 0; }
+
+  /* ---------- Story stage ---------- */
+  #storyWrap{ display:none; position:relative; z-index:2; max-width:520px; margin:0 auto; padding:0 20px 60px; }
+  .storyhead{ min-height:78svh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px 0 20px; opacity:0; transition:opacity 1s ease; }
+  .storyhead.in{ opacity:1; }
+  .storyhead .eyebrow{ font-size:12px; letter-spacing:.22em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+  .storyhead h1{ font-family:'Great Vibes',cursive; font-weight:400; font-size:clamp(60px,21vw,92px); line-height:1; margin:14px 0 4px; color:var(--rose); }
+  .storyhead h2{ font-family:'Playfair Display',serif; font-weight:600; font-style:italic; font-size:clamp(19px,5.6vw,24px); color:var(--plum); margin:0; }
+  .orn{ color:var(--gold); letter-spacing:.5em; font-size:14px; margin-top:22px; }
+  .hint{ margin-top:30px; font-size:13px; color:var(--muted); animation:bob 1.8s ease-in-out infinite; }
+  @keyframes bob{ 50%{ transform:translateY(6px); } }
+
+  .chapter{ position:relative; margin:0 0 56px; text-align:center; opacity:0; transform:translateY(26px); transition:opacity .8s ease, transform .8s ease; }
+  .chapter.in{ opacity:1; transform:none; }
+  .num{ width:54px; height:54px; margin:0 auto 12px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:22px; font-weight:700; color:#fff; background:linear-gradient(135deg,var(--rose),#F08AB0); box-shadow:0 10px 24px -10px rgba(214,51,108,.8); }
+  .label{ font-size:11.5px; letter-spacing:.24em; text-transform:uppercase; color:var(--gold); font-weight:600; }
+  .chapter h3{ font-family:'Playfair Display',serif; font-size:clamp(26px,7.4vw,32px); line-height:1.15; margin:6px 0 12px; color:var(--plum); }
+  .chapter p{ font-family:'Cormorant Garamond',serif; font-size:20px; line-height:1.55; font-weight:500; color:#4F3A4E; margin:0 auto; max-width:420px; }
+  .arch{ margin:20px auto 20px; width:min(78%,300px); aspect-ratio:4/5; border-radius:999px 999px 20px 20px; padding:7px; background:linear-gradient(160deg,var(--gold-soft),#fff 40%,var(--rose-soft)); box-shadow:0 22px 40px -22px rgba(63,29,61,.55); border:1px solid #F1DDA8; }
+  .arch img{ width:100%; height:100%; object-fit:cover; object-position:center 22%; border-radius:999px 999px 14px 14px; display:block; }
+  .arch.wide{ aspect-ratio:1/1.1; }
+  .cap{ margin-top:-6px; font-family:'Cormorant Garamond',serif; font-style:italic; font-size:16px; color:var(--muted); }
+  .divider{ text-align:center; color:var(--gold); letter-spacing:.6em; font-size:13px; margin:-24px 0 36px; }
+
+  .wish{ margin:0 0 16px; padding:18px 20px; border-radius:18px; background:var(--blush); border:1px solid #F6D4DE; opacity:0; transform:translateY(22px); transition:opacity .8s ease, transform .8s ease; }
+  .wish.in{ opacity:1; transform:none; }
+  .wish.j{ background:#FFF9E8; border-color:var(--gold-soft); }
+  .wish small{ display:block; font-size:11px; letter-spacing:.18em; text-transform:uppercase; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .wish div{ font-family:'Cormorant Garamond',serif; font-size:19px; line-height:1.5; font-weight:600; color:#4A3549; }
+  .finale{ text-align:center; padding:24px 0 0; opacity:0; transform:translateY(22px); transition:opacity .8s ease, transform .8s ease; }
+  .finale.in{ opacity:1; transform:none; }
+  .finale .big{ font-family:'Great Vibes',cursive; font-size:clamp(46px,15vw,68px); color:var(--rose); line-height:1.05; }
+  .finale .small{ font-family:'Playfair Display',serif; font-style:italic; color:var(--plum); font-size:18px; margin-top:8px; }
+  .finale .ps{ margin-top:18px; font-size:14px; color:var(--muted); }
+  .replay{ margin-top:22px; font:inherit; font-size:13px; font-weight:600; color:var(--rose); background:#fff; border:1px solid #F4C9D6; border-radius:999px; padding:10px 20px; cursor:pointer; }
+  @media (prefers-reduced-motion: reduce){
+    .chapter,.wish,.finale,.storyhead{ opacity:1 !important; transform:none !important; transition:none; }
+    .hint,.petal,.siren{ animation:none; }
+  }
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<canvas id="confetti"></canvas>
+
+<section class="wrap" id="stageCard">
+  <div id="card">
+    <div class="head">
+      <div class="tag">Official Birthday Interrogation</div>
+      <h1 id="title">You have been summoned</h1>
+      <div class="bar"><i id="fill"></i></div>
+    </div>
+    <div class="body" id="body"></div>
+  </div>
+</section>
+
+<main id="storyWrap">
+  <section class="storyhead" id="storyhead">
+    <div class="eyebrow">For Sissy</div>
+    <h1>How We Met</h1>
+    <h2>the story of two sisters</h2>
+    <div class="orn">✦ ✦ ✦</div>
+    <div class="hint">scroll to begin ↓</div>
+  </section>
+  <div id="chapters"></div>
+  <div id="ending"></div>
+</main>
+
+<script>
+  var IMG = {
+   
+   baby: "C:\\Users\\sameeksha\\Pictures\\baby.ppg.jfif",
+
+    portrait: "C:\\Users\\sameeksha\\Pictures\\treaty.jpg",
+   cartoon: "C:\\Users\\sameeksha\\Pictures\\grown.jpg",
+    sisters: "C:\\Users\\sameeksha\\Pictures\\you.jpeg"
+  };
+
+  var questions = [
+    { q: "First question, and think carefully: whose birthday is on November 14th?",
+      a: [ { t: "Mine 🎂", r: "Correct. The lie detector is impressed. ✅" },
+           { t: "I plead the fifth 😏", r: "Suspicious answer. But yes, it's you. Case closed. 🔨" } ] },
+    { q: "Be honest. Who is the better sister in this family?",
+      a: [ { t: "Me, obviously 😎", r: "Confident. Wrong, but confident. 😂 (Kidding. Mostly.)" },
+           { t: "My little sister 🥰", r: "Wise answer. Your safety in this house is now guaranteed. 🛡️" } ] },
+    { q: "How many times have you borrowed my stuff without asking?",
+      a: [ { t: "Zero 😇", r: "The lie detector just exploded. 💥" },
+           { t: "Only a few times 😅", r: "A 'few' is carrying a lot of weight here. Noted. 📝" },
+           { t: "I lost count 😂", r: "Honesty. Rare. Respect. 🫡" } ] },
+    { q: "Will you let me win just one argument today?",
+      a: [ { t: "Yes 🤝", r: "Deal. I'm recording this. You will never say it again. 🎙️" },
+           { t: "No", dodge: true, tFinal: "Okay, fine 😅", r: "Knew you'd say yes in the end. Winning. 😂" } ] },
+    { q: "It's 2 AM and I text: 'Are you awake?' What do you do?",
+      a: [ { t: "Reply instantly 📱", r: "Correct. That's what sisters do, even if it's about absolutely nothing. 💛" },
+           { t: "Pretend to be asleep 😴", r: "I saw 'seen' at 2:03 AM. I see everything. 👀" } ] },
+    { q: "Final warning: do you still owe me money?",
+      a: [ { t: "Never! 💸", r: "Our records disagree. The Bank of Little Sister never forgets. 🏦" },
+           { t: "Ask me tomorrow 🏃‍♀️", r: "Birthday exemption granted. For today only. 😤" } ] },
+    { q: "Do you want to know what your birthday gift is?",
+      a: [ { t: "Yes! 🎁", r: "Surprise! The real gift is me, your cute little sister. 🥰💕" },
+           { t: "Yes, obviously 😂", r: "Surprise! The real gift is me, your cute little sister. 🥰💕" } ] },
+    { q: "Last question. Are you emotionally prepared for the letter I wrote?",
+      a: [ { t: "Bring it on 💪", r: "Get your tissues ready... 🥹" },
+           { t: "Not really 😭", r: "Too late. It's already written. Tissues ready? 🥹" } ] }
+  ];
+
+  var chapters = [
+    { t: "The Day I Arrived", x: "Once upon a very ordinary day, a tiny  member came that is you " },
+    { t: "The First Meeting", x: "Our first real meeting was awkward for both of us. I stared at you like you were the most fascinating person alive. You stared back like I was a very small problem that had come to stay." },
+    { t: "The Snack Treaty", x: "We spent weeks testing each other. I touched your things and you hid them. Then one day a shared snack ended the war, and we signed our first peace treaty with crumbs on our faces."},
+    { t: "The Secrets Begin", x: "That’s when the whispers started, along with the “don’t tell mom” promises. Somewhere between the giggles and the hiding spots, we stopped being just sisters and became a team." },
+    { t: "The Girl I Looked Up To", x: "You grew into my protector, my advisor . I watched you become strong, kind and unstoppable." },
+    { t: "And Here We Are", x: "Years later, the new hire is still here, still stealing your things, still your biggest fan. Happy birthday, sissy. If I could choose how we met all over again, I’d pick the exact same story." }
+  ];
+
+  var letterHTML =
+    '<p class="dear">Dear Sissy,</p>' +
+    '<p>I honestly don’t know where to start. I arrived and you looked at me like, “Who approved this new hire?” You were already the boss of the house. I was the tiny problem who followed you everywhere.</p>' +
+    '<p>But honestly, life would be so boring without our drama, silly fights, endless arguments and crazy madness. No matter how much we fight, I’ll always stand by you.</p>' +
+    
+    '<p>Behind every fight is a whole lot of love that I dont always know how to express. I might not say it often, but I’m truly lucky to have you as my sister.</p>' +
+    '<p>Today is your day, so let someone take care of you for a change. May you get all the happiness, all the cake and all the wins you’ve been quietly hoping for.</p>' +
+    '<p>Happy birthday, sissy. If our story started over, I’d choose you again every time.</p>' +
+    '<div class="sig">your cute little sister 🤍</div>';
+
+  var blessing = "May you always know, without a shadow of a doubt, that you are deeply loved, endlessly appreciated, and never, ever alone in anything you’re carrying. 💛";
+  var joke = "😂🙏 May God give you unlimited…<br>💰 Money 😂 Happiness ❤️ Love 🍕 Food 😴 Sleep 🥊 And unlimited strength to fight with me! 🤣";
+
+  var body = document.getElementById('body');
+  var fill = document.getElementById('fill');
+  var title = document.getElementById('title');
+  var idx = 0;
+  var inStory = false;
+
+  /* ---------- Opening ---------- */
+  function showOpening(){
+    idx = 0;
+    fill.style.width = '0%';
+    title.textContent = 'You have been summoned';
+    body.innerHTML =
+      '<div class="open">' +
+        '<div class="stamp"><span class="siren">🚨</span> CONFIDENTIAL</div>' +
+        '<div class="caseno">CASE NO. 1994 &middot; FILED NOVEMBER 14</div>' +
+        '<h2 class="summons">Deeksha, you are hereby summoned for a birthday interrogation.</h2>' +
+        '<div class="file">' +
+          '<div class="row"><b>Suspect</b><span>Deeksha, also known as “Sissy,Miss World,Sundari,Miss Universe"</span></div>' +
+          '<div class="row"><b>Charge</b><span>Being the best sister in the world</span></div>' +
+          '<div class="row"><b>Interrogator</b><span>Your cute little sister</span></div>' +
+          '<div class="row"><b>Sentence</b><span>Unlimited cake, love and blessings</span></div>' +
+        '</div>' +
+        '<div class="opts" id="o1" style="min-height:0"></div>' +
+        '<div id="r1"></div>' +
+      '</div>';
+    var o1 = document.getElementById('o1');
+    var r1 = document.getElementById('r1');
+    var choices = [
+      { t: "I accept. Let's begin 🕵️", r: "Wise choice. Resistance was futile anyway. 😏" },
+      { t: "I plead innocent 😇", r: "Innocent people don't say that. Starting anyway. 🔨" }
+    ];
+    var done = false;
+    choices.forEach(function(c){
+      var b = document.createElement('button');
+      b.className = 'opt';
+      b.textContent = c.t;
+      b.onclick = function(){
+        if(done) return;
+        done = true;
+        b.classList.add('picked');
+        o1.querySelectorAll('.opt').forEach(function(x){ x.disabled = true; });
+        r1.innerHTML = '<div class="reply"></div>';
+        r1.firstChild.textContent = c.r;
+        var nx = document.createElement('button');
+        nx.className = 'next';
+        nx.textContent = 'Start the interrogation →';
+        nx.onclick = showQuestion;
+        r1.appendChild(nx);
+        burst(40);
+      };
+      o1.appendChild(b);
+    });
+  }
+
+  /* ---------- Questions ---------- */
+  function showQuestion(){
+    var item = questions[idx];
+    fill.style.width = (idx / questions.length * 100) + '%';
+    title.textContent = 'Answer carefully. Everything is being recorded 🎙️';
+    body.innerHTML = '';
+
+    var num = document.createElement('div');
+    num.className = 'qnum';
+    num.textContent = 'Question ' + (idx + 1) + ' of ' + questions.length;
+    var q = document.createElement('div');
+    q.className = 'q';
+    q.textContent = item.q;
+    var opts = document.createElement('div');
+    opts.className = 'opts';
+    var replyBox = document.createElement('div');
+    var answered = false;
+
+    function choose(btn, ans){
+      if(answered) return;
+      answered = true;
+      btn.classList.add('picked');
+      opts.querySelectorAll('.opt').forEach(function(b){ b.disabled = true; });
+      replyBox.innerHTML = '';
+      var r = document.createElement('div');
+      r.className = 'reply';
+      r.textContent = ans.r;
+      replyBox.appendChild(r);
+      var nx = document.createElement('button');
+      nx.className = 'next';
+      var last = idx === questions.length - 1;
+      nx.textContent = last ? 'Go to the letter box 💌' : 'Next question →';
+      nx.onclick = function(){ idx++; if(idx < questions.length){ showQuestion(); } else { showLetterBox(); } };
+      replyBox.appendChild(nx);
+      if(last || idx === 0) burst(60);
+    }
+
+    item.a.forEach(function(ans){
+      var btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.textContent = ans.t;
+      if(ans.dodge){
+        var dodges = 0;
+        btn.classList.add('runaway');
+        var move = function(){
+          btn.style.position = 'absolute';
+          var maxL = Math.max(0, opts.clientWidth - btn.offsetWidth);
+          var maxT = Math.max(0, opts.clientHeight - btn.offsetHeight);
+          btn.style.left = Math.random() * maxL + 'px';
+          btn.style.top = Math.random() * maxT + 'px';
+          dodges++;
+          if(dodges >= 5){ btn.textContent = ans.tFinal; }
+        };
+        var dodgeEvt = function(e){ if(dodges < 5){ e.preventDefault(); move(); } };
+        btn.addEventListener('pointerenter', dodgeEvt);
+        btn.addEventListener('pointerdown', dodgeEvt);
+        btn.addEventListener('click', function(e){
+          if(dodges < 5){ e.preventDefault(); return; }
+          choose(btn, ans);
+        });
+      } else {
+        btn.onclick = function(){ choose(btn, ans); };
+      }
+      opts.appendChild(btn);
+    });
+
+    body.appendChild(num);
+    body.appendChild(q);
+    body.appendChild(opts);
+    body.appendChild(replyBox);
+  }
+
+  /* ---------- Letter box ---------- */
+  function showLetterBox(){
+    fill.style.width = '100%';
+    title.textContent = 'A letter is waiting for you';
+    body.innerHTML =
+      '<div class="mailwrap">' +
+        '<div class="env" id="env"><div class="flap"></div><div class="seal">💌</div></div>' +
+        '<div id="letterSpot"></div>' +
+        '<button class="next" id="openLetter">Open the letter 💌</button>' +
+        '<div id="afterLetter"></div>' +
+      '</div>';
+    var opened = false;
+    document.getElementById('openLetter').onclick = function(){
+      if(opened) return;
+      opened = true;
+      this.style.display = 'none';
+      document.getElementById('env').classList.add('open');
+      burst(70);
+      setTimeout(function(){
+        document.getElementById('letterSpot').innerHTML = '<div class="letterbox">' + letterHTML + '</div>';
+        var go = document.createElement('button');
+        go.className = 'next';
+        go.textContent = 'Continue to our story →';
+        go.onclick = goStory;
+        document.getElementById('afterLetter').appendChild(go);
+      }, 650);
+    };
+  }
+
+  /* ---------- Story ---------- */
+  function buildStory(){
+    var html = '';
+    chapters.forEach(function(c, i){
+      html += '<section class="chapter">' +
+        '<div class="num">' + (i + 1) + '</div>' +
+        '<div class="label">Chapter ' + (i + 1) + '</div>' +
+        '<h3>' + c.t + '</h3>' +
+        (c.img ? '<div class="arch' + (c.wide ? ' wide' : '') + '"><img src="' + IMG[c.img] + '" alt="' + c.t + '"></div><div class="cap">' + c.cap + '</div>' : '') +
+        '<p>' + c.x + '</p>' +
+      '</section>' +
+      (i < chapters.length - 1 ? '<div class="divider">✦ ✦ ✦</div>' : '');
+    });
+    document.getElementById('chapters').innerHTML = html;
+    document.getElementById('ending').innerHTML =
+      '<div class="wish"><small>A blessing</small><div>' + blessing + '</div></div>' +
+      '<div class="wish j"><small>A joke</small><div>' + joke + '</div></div>' +
+      '<div class="finale" id="finale">' +
+        '<div class="big">Happy Birthday,<br>Sissy!</div>' +
+        '<div class="small">to the best sister in the world</div>' +
+        '<div class="ps">P.S. The real gift is me, your cute little sister. 🥰💕</div>' +
+        '<button class="replay" id="replay">↺ start again</button>' +
+      '</div>';
+    document.getElementById('replay').onclick = function(){ location.reload(); };
+  }
+
+  var fired = false;
+  function setupReveal(){
+    var items = document.querySelectorAll('#storyWrap .storyhead, #storyWrap .chapter, #storyWrap .wish, #storyWrap .finale');
+    if('IntersectionObserver' in window){
+      var io = new IntersectionObserver(function(entries){
+        entries.forEach(function(en){
+          if(en.isIntersecting){
+            en.target.classList.add('in');
+            if(en.target.id === 'finale' && !fired){ fired = true; burst(160); setTimeout(function(){ burst(100); }, 700); }
+          }
+        });
+      }, { threshold: 0.18 });
+      items.forEach(function(el){ io.observe(el); });
+    } else {
+      items.forEach(function(el){ el.classList.add('in'); });
+    }
+  }
+
+  function goStory(){
+    buildStory();
+    document.getElementById('stageCard').style.display = 'none';
+    document.getElementById('storyWrap').style.display = 'block';
+    inStory = true;
+    window.scrollTo(0, 0);
+    setupReveal();
+    onScroll();
+  }
+
+  var bar = document.getElementById('progress');
+  function onScroll(){
+    if(!inStory){ bar.style.width = '0'; return; }
+    var h = document.documentElement.scrollHeight - innerHeight;
+    bar.style.width = (h > 0 ? scrollY / h * 100 : 0) + '%';
+  }
+  addEventListener('scroll', onScroll, { passive: true });
+
+  /* ---------- Petals ---------- */
+  var pet = ['🌸','🤍','❤️','✨','🌷'];
+  function petal(){
+    var p = document.createElement('div');
+    p.className = 'petal';
+    p.textContent = pet[Math.floor(Math.random() * pet.length)];
+    p.style.left = Math.random() * 100 + 'vw';
+    p.style.fontSize = (12 + Math.random() * 14) + 'px';
+    p.style.animationDuration = (9 + Math.random() * 7) + 's';
+    document.body.appendChild(p);
+    setTimeout(function(){ p.remove(); }, 17000);
+  }
+  setInterval(petal, 1400);
+
+  /* ---------- Confetti ---------- */
+  var canvas = document.getElementById('confetti');
+  var ctx = canvas.getContext('2d');
+  function resize(){ canvas.width = innerWidth; canvas.height = innerHeight; }
+  resize(); addEventListener('resize', resize);
+  var colors = ['#D6336C','#F08AB0','#C9A24B','#F3E3B5','#B79CED','#FFFFFF'];
+  var particles = [];
+  function burst(n){
+    for(var i = 0; i < n; i++){
+      particles.push({ x: canvas.width / 2 + (Math.random() - .5) * 140, y: canvas.height * .4,
+        vx: (Math.random() - .5) * 10, vy: Math.random() * -10 - 3, size: Math.random() * 7 + 4,
+        color: colors[Math.floor(Math.random() * colors.length)], rot: Math.random() * 360, vr: (Math.random() - .5) * 12,
+        shape: Math.random() > .5 ? 'rect' : 'circle', life: 0 });
+    }
+  }
+  function tick(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(function(p){
+      p.vy += .22; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life++;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot * Math.PI / 180); ctx.fillStyle = p.color;
+      if(p.shape === 'rect'){ ctx.fillRect(-p.size / 2, -p.size / 3, p.size, p.size * .6); }
+      else { ctx.beginPath(); ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2); ctx.fill(); }
+      ctx.restore();
+    });
+    particles = particles.filter(function(p){ return p.y < canvas.height + 40 && p.life < 400; });
+    requestAnimationFrame(tick);
+  }
+  tick();
+
+  showOpening();
+</script>
+</body>
+</html>
